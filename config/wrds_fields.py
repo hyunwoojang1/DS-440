@@ -30,14 +30,67 @@ FINANCIAL_FIELDS = [
 ]
 
 # ── 파생 지표 계산 정의 ───────────────────────────────────────────────────────
+# 구조: "지표명": ("분자 표현식", "분모 표현식")
+# 실제 계산: numerator / denominator
+# _lag4 = 4분기 전 값 (YoY 비교용)
+#
 DERIVED_FIELDS: dict[str, tuple[str, str]] = {
-    "pbr":             ("prcc_f", "ceq / csho"),
-    "roe":             ("ni", "ceq"),
-    "eps_change_rate": ("epsfx - epsfx_lag4", "abs(epsfx_lag4)"),
-    "fcf_yield":       ("oancf - capx", "mkvalt"),
-    "de_ratio":        ("dltt + dlc", "ceq"),
-    "revenue_growth":  ("sale - sale_lag4", "sale_lag4"),
-    "earnings_yield":  ("epsfx", "prcc_f"),
+
+    # PBR (주가순자산비율) — 낮을수록 저평가
+    # 계산: 주가 / 주당순자산 = prcc_f / (ceq / csho)
+    # 해석: 시장이 장부가치의 몇 배로 기업을 평가하는가
+    "pbr": (
+        "prcc_f",        # 분자: 회계연도 말 주가
+        "ceq / csho",    # 분모: 주주자본 ÷ 발행주식수 = 주당순자산(BPS)
+    ),
+
+    # ROE (자기자본이익률) — 높을수록 자본 효율적
+    # 계산: 순이익 / 주주자본
+    # 해석: 주주가 투자한 자본 1원으로 얼마의 이익을 냈는가
+    "roe": (
+        "ni",            # 분자: 순이익 (Net Income)
+        "ceq",           # 분모: 주주자본 (Common Equity)
+    ),
+
+    # EPS 변화율 YoY (주당순이익 성장률) — 높을수록 이익 성장
+    # 계산: (현재 EPS - 4분기 전 EPS) / |4분기 전 EPS|
+    # 해석: 1년 전 대비 주당순이익이 얼마나 증가/감소했는가
+    "eps_change_rate": (
+        "epsfx - epsfx_lag4",   # 분자: 현재 희석 EPS - 4분기 전 희석 EPS
+        "abs(epsfx_lag4)",       # 분모: 4분기 전 EPS 절댓값 (부호 무관 비율 계산)
+    ),
+
+    # FCF Yield (잉여현금흐름 수익률) — 높을수록 현금 창출력 우수
+    # 계산: (영업현금흐름 - 자본지출) / 시가총액
+    # 해석: 시가총액 대비 실제로 창출되는 잉여현금의 비율
+    "fcf_yield": (
+        "oancf - capx",  # 분자: 영업현금흐름 - 자본지출 = 잉여현금흐름(FCF)
+        "mkvalt",        # 분모: 시가총액 (Market Value of Total Assets)
+    ),
+
+    # D/E Ratio (부채비율) — 낮을수록 재무 안정적
+    # 계산: (장기부채 + 단기부채) / 주주자본
+    # 해석: 자기자본 1원당 몇 원의 부채를 사용하고 있는가
+    "de_ratio": (
+        "dltt + dlc",    # 분자: 장기부채(Long-term Debt) + 단기부채(Debt in Current Liabilities)
+        "ceq",           # 분모: 주주자본 (Common Equity)
+    ),
+
+    # 매출 성장률 YoY — 높을수록 탑라인 성장
+    # 계산: (현재 매출 - 4분기 전 매출) / 4분기 전 매출
+    # 해석: 1년 전 대비 매출액이 얼마나 증가/감소했는가
+    "revenue_growth": (
+        "sale - sale_lag4",  # 분자: 현재 매출 - 4분기 전 매출
+        "sale_lag4",         # 분모: 4분기 전 매출 (기준값)
+    ),
+
+    # Earnings Yield (이익 수익률) — 높을수록 저평가 (PER의 역수)
+    # 계산: 희석 EPS / 주가 = 1 / PER
+    # 해석: 주가 1원당 얼마의 이익이 귀속되는가. PER 15 → Earnings Yield 6.7%
+    "earnings_yield": (
+        "epsfx",         # 분자: 희석 EPS (Diluted EPS)
+        "prcc_f",        # 분모: 회계연도 말 주가
+    ),
 }
 
 # ── 필터 조건 (Compustat 표준 필터) ──────────────────────────────────────────

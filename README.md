@@ -81,8 +81,8 @@ flowchart TD
 
     subgraph HORIZON["Horizons  (engine/horizons/)"]
         H1["ShortTermHorizon\nEntryScore = 0.20·G_M + 0.10·G_F + 0.70·G_T"]
-        H2["MidTermHorizon\nEntryScore = 0.35·G_M + 0.30·G_F + 0.35·G_T"]
-        H3["LongTermHorizon\nEntryScore = 0.50·G_M + 0.45·G_F + 0.05·G_T"]
+        H2["MidTermHorizon\nEntryScore = 0.30·G_M + 0.30·G_F + 0.40·G_T"]
+        H3["LongTermHorizon\nEntryScore = 0.40·G_M + 0.35·G_F + 0.25·G_T"]
     end
 
     subgraph OUTPUT["Output  (reports/ + browser)"]
@@ -174,9 +174,9 @@ Step 3.  Cross-group weighted sum per horizon  (group level → final score)
 | sma_ratio | 0.10 | 0.20 | 0.40 |
 | stoch_k | 0.15 | 0.10 | 0.00 |
 | bb_pct_b | 0.15 | 0.10 | 0.00 |
-| obv_slope | 0.10 | 0.10 | 0.20 |
-| atr_norm | 0.05 | 0.05 | 0.15 |
-| roc | 0.05 | 0.10 | 0.15 |
+| obv_slope | 0.10 | 0.15 | 0.20 |
+| atr_norm | 0.05 | 0.00 | 0.05 |
+| roc | 0.05 | 0.05 | 0.10 |
 
 ### 3-3. Three Normalization Methods
 
