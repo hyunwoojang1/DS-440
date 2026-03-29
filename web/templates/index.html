@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MHIDSS — Multi-Horizon Investment Decision Support</title>
+<style>
+:root {
+  --bg:           #0d1117;
+  --bg2:          #161b22;
+  --bg3:          #21262d;
+  --border:       #30363d;
+  --text:         #e6edf3;
+  --muted:        #8b949e;
+  --blue:         #58a6ff;
+  --purple:       #d2a8ff;
+  --orange:       #ffa657;
+  --strong-buy:   #1a7c3e;
+  --strong-buy-bg:#0d2b1a;
+  --buy:          #2ea043;
+  --buy-bg:       #0d2818;
+  --neutral:      #d29922;
+  --neutral-bg:   #2d2208;
+  --sell:         #da3633;
+  --sell-bg:      #2d0f0e;
+  --strong-sell:  #b91c1c;
+  --strong-sell-bg:#200b0b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+}
+
+/* ── Top navbar ── */
+.navbar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  height: 56px;
+  gap: 32px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar-brand {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--blue);
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+
+.navbar-sub {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+}
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+  margin-left: auto;
+}
+
+.tab-btn {
+  padding: 6px 20px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  background: transparent;
+  color: var(--muted);
+  transition: all 0.15s;
+}
+
+.tab-btn.active {
+  background: var(--bg2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.tab-btn:hover:not(.active) { color: var(--text); }
+
+/* ── Main content ── */
+.main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px 60px;
+}
+
+/* ── Views ── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── Search card ── */
+.search-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 32px 36px;
+  margin-bottom: 32px;
+}
+
+.search-headline {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.search-sub {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+
+.input-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ticker-input {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  width: 180px;
+  letter-spacing: 1px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.ticker-input::placeholder { color: var(--muted); font-weight: 400; }
+.ticker-input:focus { border-color: var(--blue); }
+
+.date-input {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+  color-scheme: dark;
+}
+
+.date-input:focus { border-color: var(--blue); }
+
+.vs-divider {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 0 4px;
+  align-self: flex-end;
+  margin-bottom: 10px;
+}
+
+.run-btn {
+  background: var(--blue);
+  color: #0d1117;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 28px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+.run-btn:hover { opacity: 0.88; }
+.run-btn:active { transform: scale(0.97); }
+.run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Loading / Error ── */
+.status-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 48px;
+  text-align: center;
+  display: none;
+}
+
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.status-msg { color: var(--muted); font-size: 14px; }
+.error-icon { font-size: 32px; margin-bottom: 12px; }
+.error-msg { color: #f85149; font-size: 14px; margin-bottom: 8px; }
+.error-detail { color: var(--muted); font-size: 13px; }
+
+/* ── Result area ── */
+.result-area { display: none; }
+
+/* ── Ticker header ── */
+.ticker-header {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px 28px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.th-left { display: flex; align-items: baseline; gap: 14px; }
+
+.ticker-symbol {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--blue);
+}
+
+.sector-tag {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.th-right { text-align: right; }
+.th-date { color: var(--muted); font-size: 13px; }
+
+/* ── Entry score cards ── */
+.entry-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.entry-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.entry-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+
+.entry-card.strong-buy::before { background: #56d364; }
+.entry-card.buy::before         { background: #3fb950; }
+.entry-card.neutral::before     { background: #d29922; }
+.entry-card.sell::before        { background: #f85149; }
+.entry-card.strong-sell::before { background: #ff7b72; }
+
+.horizon-label {
+  font-size: 12px; font-weight: 700; letter-spacing: 1px;
+  color: var(--muted); text-transform: uppercase; margin-bottom: 4px;
+}
+
+.horizon-sub { font-size: 11px; color: var(--muted); margin-bottom: 16px; }
+
+.entry-score-num {
+  font-size: 52px; font-weight: 700; line-height: 1; margin-bottom: 12px;
+}
+
+.strong-buy .entry-score-num  { color: #56d364; }
+.buy .entry-score-num          { color: #3fb950; }
+.neutral .entry-score-num      { color: #d29922; }
+.sell .entry-score-num         { color: #f85149; }
+.strong-sell .entry-score-num  { color: #ff7b72; }
+
+.entry-signal {
+  font-size: 13px; font-weight: 700;
+  padding: 5px 16px; border-radius: 6px;
+  display: inline-block; margin-bottom: 16px;
+}
+
+.strong-buy .entry-signal  { background: var(--strong-buy-bg); color: #56d364; border: 1px solid var(--strong-buy); }
+.buy .entry-signal          { background: var(--buy-bg);        color: #3fb950; border: 1px solid var(--buy); }
+.neutral .entry-signal      { background: var(--neutral-bg);    color: #d29922; border: 1px solid var(--neutral); }
+.sell .entry-signal         { background: var(--sell-bg);       color: #f85149; border: 1px solid var(--sell); }
+.strong-sell .entry-signal  { background: var(--strong-sell-bg);color: #ff7b72; border: 1px solid var(--strong-sell); }
+
+.weight-bar {
+  display: flex; height: 6px; border-radius: 4px;
+  overflow: hidden; margin-top: 16px; gap: 2px;
+}
+
+.wb-macro { background: #58a6ff; }
+.wb-fund  { background: #d2a8ff; }
+.wb-tech  { background: #ffa657; }
+
+.weight-legend {
+  display: flex; justify-content: center;
+  gap: 10px; margin-top: 8px; font-size: 11px; color: var(--muted);
+}
+
+.weight-legend span::before {
+  display: inline-block; width: 8px; height: 8px;
+  border-radius: 2px; margin-right: 4px;
+  vertical-align: middle; content: "";
+}
+
+.wl-macro::before { background: #58a6ff; }
+.wl-fund::before  { background: #d2a8ff; }
+.wl-tech::before  { background: #ffa657; }
+
+/* ── 3x3 Grid ── */
+.grid-section {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.grid-title {
+  padding: 14px 20px;
+  font-size: 13px; font-weight: 600;
+  color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg3);
+}
+
+.score-grid { width: 100%; border-collapse: collapse; }
+
+.score-grid th {
+  padding: 12px 16px;
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.6px;
+  color: var(--muted); background: var(--bg3);
+  border: 1px solid var(--border);
+}
+
+.score-grid th.row-header {
+  text-align: left; width: 140px;
+  font-size: 13px; color: var(--text);
+}
+
+.score-grid th.col-header { text-align: center; }
+.score-grid th.col-header .col-label { display: block; font-size: 14px; color: var(--text); font-weight: 700; margin-bottom: 2px; }
+.score-grid th.col-header .col-sub   { display: block; font-size: 11px; color: var(--muted); font-weight: 400; }
+
+.score-cell {
+  border: 1px solid var(--border);
+  padding: 16px; text-align: center; vertical-align: middle;
+}
+
+.score-cell .score-num { font-size: 26px; font-weight: 700; line-height: 1; margin-bottom: 6px; }
+.score-cell .sig-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+  padding: 3px 10px; border-radius: 4px;
+  display: inline-block; margin-bottom: 10px;
+}
+.score-cell .bar-track { background: rgba(255,255,255,0.08); border-radius: 4px; height: 5px; overflow: hidden; }
+.score-cell .bar-fill  { height: 5px; border-radius: 4px; }
+
+.strong-buy  .score-num { color: #56d364; }
+.strong-buy  .sig-label { background: var(--strong-buy-bg);  color: #56d364; border: 1px solid var(--strong-buy);  }
+.strong-buy  .bar-fill  { background: #56d364; }
+.buy         .score-num { color: #3fb950; }
+.buy         .sig-label { background: var(--buy-bg);         color: #3fb950; border: 1px solid var(--buy);         }
+.buy         .bar-fill  { background: #3fb950; }
+.neutral     .score-num { color: #d29922; }
+.neutral     .sig-label { background: var(--neutral-bg);     color: #d29922; border: 1px solid var(--neutral);     }
+.neutral     .bar-fill  { background: #d29922; }
+.sell        .score-num { color: #f85149; }
+.sell        .sig-label { background: var(--sell-bg);        color: #f85149; border: 1px solid var(--sell);        }
+.sell        .bar-fill  { background: #f85149; }
+.strong-sell .score-num { color: #ff7b72; }
+.strong-sell .sig-label { background: var(--strong-sell-bg); color: #ff7b72; border: 1px solid var(--strong-sell); }
+.strong-sell .bar-fill  { background: #ff7b72; }
+
+/* ── Compare layout ── */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.compare-col-header {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.compare-col-ticker {
+  font-size: 26px; font-weight: 700; color: var(--blue);
+}
+
+.compare-col-sector { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+.compare-entry-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.compare-entry-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.compare-entry-card::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+
+.compare-entry-card.strong-buy::before { background: #56d364; }
+.compare-entry-card.buy::before         { background: #3fb950; }
+.compare-entry-card.neutral::before     { background: #d29922; }
+.compare-entry-card.sell::before        { background: #f85149; }
+.compare-entry-card.strong-sell::before { background: #ff7b72; }
+
+.cec-horizon { width: 70px; flex-shrink: 0; }
+.cec-horizon-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
+.cec-horizon-sub   { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+.cec-score-num { font-size: 36px; font-weight: 700; line-height: 1; width: 70px; text-align: center; flex-shrink: 0; }
+.strong-buy  .cec-score-num  { color: #56d364; }
+.buy         .cec-score-num  { color: #3fb950; }
+.neutral     .cec-score-num  { color: #d29922; }
+.sell        .cec-score-num  { color: #f85149; }
+.strong-sell .cec-score-num  { color: #ff7b72; }
+
+.cec-right { flex: 1; }
+.cec-signal {
+  display: inline-block; font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 4px; margin-bottom: 8px;
+}
+
+.strong-buy  .cec-signal { background: var(--strong-buy-bg);  color: #56d364; border: 1px solid var(--strong-buy);  }
+.buy         .cec-signal { background: var(--buy-bg);         color: #3fb950; border: 1px solid var(--buy);         }
+.neutral     .cec-signal { background: var(--neutral-bg);     color: #d29922; border: 1px solid var(--neutral);     }
+.sell        .cec-signal { background: var(--sell-bg);        color: #f85149; border: 1px solid var(--sell);        }
+.strong-sell .cec-signal { background: var(--strong-sell-bg); color: #ff7b72; border: 1px solid var(--strong-sell); }
+
+.cec-groups {
+  display: flex; gap: 10px; font-size: 11px; color: var(--muted);
+}
+
+.cec-group-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.cec-group-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; }
+.cec-group-val { font-size: 13px; font-weight: 600; color: var(--text); }
+
+/* ── Compare analysis grid ── */
+.compare-analysis-row {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.compare-analysis-header {
+  padding: 14px 20px;
+  font-size: 13px; font-weight: 600;
+  color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg3);
+}
+
+.compare-table { width: 100%; border-collapse: collapse; }
+
+.compare-table th, .compare-table td {
+  border: 1px solid var(--border);
+  padding: 12px 16px;
+  text-align: center;
+}
+
+.compare-table th {
+  background: var(--bg3);
+  font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted);
+}
+
+.compare-table th.row-label { text-align: left; color: var(--text); font-size: 13px; width: 120px; }
+.compare-table th.ticker-col { font-size: 14px; color: var(--blue); font-weight: 700; }
+
+.compare-table td .score-num { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.compare-table td .sig-label { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 3px; display: inline-block; }
+.compare-table td .bar-track { background: rgba(255,255,255,0.08); border-radius: 3px; height: 4px; overflow: hidden; margin-top: 6px; }
+.compare-table td .bar-fill  { height: 4px; border-radius: 3px; }
+
+/* ── Legend ── */
+.legend-section {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden; margin-bottom: 20px;
+}
+
+.legend-title {
+  padding: 14px 20px; font-size: 13px; font-weight: 600;
+  color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px;
+  border-bottom: 1px solid var(--border); background: var(--bg3);
+}
+
+.legend-body { padding: 20px 24px; }
+
+.legend-scale {
+  display: flex; height: 10px; border-radius: 6px;
+  overflow: hidden; margin: 8px 0 4px;
+}
+
+.ls-strong-sell { background: #ff7b72; flex: 30; }
+.ls-sell        { background: #f85149; flex: 15; }
+.ls-neutral     { background: #d29922; flex: 10; }
+.ls-buy         { background: #3fb950; flex: 15; }
+.ls-strong-buy  { background: #56d364; flex: 30; }
+
+.legend-scale-labels {
+  display: flex; justify-content: space-between;
+  font-size: 11px; color: var(--muted); margin-bottom: 16px;
+}
+
+.legend-rows { display: flex; flex-direction: column; gap: 8px; }
+
+.legend-row { display: flex; align-items: center; gap: 14px; }
+
+.lr-badge {
+  font-size: 12px; font-weight: 700; padding: 4px 14px;
+  border-radius: 5px; min-width: 110px; text-align: center;
+}
+
+.lr-badge.strong-buy  { background: var(--strong-buy-bg);  color: #56d364; border: 1px solid var(--strong-buy);  }
+.lr-badge.buy         { background: var(--buy-bg);         color: #3fb950; border: 1px solid var(--buy);         }
+.lr-badge.neutral     { background: var(--neutral-bg);     color: #d29922; border: 1px solid var(--neutral);     }
+.lr-badge.sell        { background: var(--sell-bg);        color: #f85149; border: 1px solid var(--sell);        }
+.lr-badge.strong-sell { background: var(--strong-sell-bg); color: #ff7b72; border: 1px solid var(--strong-sell); }
+
+.lr-range { font-size: 13px; font-weight: 600; color: var(--text); min-width: 70px; }
+.lr-desc  { font-size: 13px; color: var(--muted); }
+
+/* ── Footer ── */
+.site-footer {
+  text-align: center; color: var(--muted); font-size: 12px;
+  padding: 24px; border-top: 1px solid var(--border);
+  margin-top: 24px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .entry-cards { grid-template-columns: 1fr; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .input-row { flex-wrap: wrap; }
+  .vs-divider { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <div class="navbar-brand">MHIDSS</div>
+  <div class="navbar-sub">Multi-Horizon Investment Decision Support System</div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('analyze')">Analyze</button>
+    <button class="tab-btn" onclick="switchTab('compare')">Compare</button>
+  </div>
+</nav>
+
+<main class="main">
+
+  <!-- ══════════════════════════════════════════════════════
+       ANALYZE TAB
+  ══════════════════════════════════════════════════════ -->
+  <div id="view-analyze" class="view active">
+    <div class="search-card">
+      <div class="search-headline">Stock Analysis</div>
+      <div class="search-sub">
+        Enter a ticker symbol or company name to get Short, Mid, and Long-horizon entry scores
+        powered by Macro, Fundamental, and Technical signals.
+      </div>
+      <div class="input-row">
+        <div class="field-group">
+          <label>Ticker / Company</label>
+          <input id="analyze-ticker" class="ticker-input" type="text"
+                 placeholder="AAPL, MSFT, Apple…"
+                 onkeydown="if(event.key==='Enter') runAnalyze()">
+        </div>
+        <div class="field-group">
+          <label>As-of Date</label>
+          <input id="analyze-date" class="date-input" type="date">
+        </div>
+        <button class="run-btn" id="analyze-btn" onclick="runAnalyze()">Run Analysis</button>
+      </div>
+    </div>
+
+    <div id="analyze-loading" class="status-box">
+      <div class="spinner"></div>
+      <div class="status-msg" id="analyze-loading-msg">Fetching data and computing scores…</div>
+    </div>
+
+    <div id="analyze-error" class="status-box">
+      <div class="error-icon">⚠️</div>
+      <div class="error-msg" id="analyze-error-msg">Something went wrong.</div>
+      <div class="error-detail" id="analyze-error-detail"></div>
+    </div>
+
+    <div id="analyze-result" class="result-area"></div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       COMPARE TAB
+  ══════════════════════════════════════════════════════ -->
+  <div id="view-compare" class="view">
+    <div class="search-card">
+      <div class="search-headline">Compare Two Stocks</div>
+      <div class="search-sub">
+        Side-by-side horizon analysis. Both analyses run in parallel — enter tickers below.
+      </div>
+      <div class="input-row">
+        <div class="field-group">
+          <label>Ticker A</label>
+          <input id="compare-ticker-a" class="ticker-input" type="text" placeholder="AAPL"
+                 onkeydown="if(event.key==='Enter') runCompare()">
+        </div>
+        <div class="vs-divider">vs</div>
+        <div class="field-group">
+          <label>Ticker B</label>
+          <input id="compare-ticker-b" class="ticker-input" type="text" placeholder="MSFT"
+                 onkeydown="if(event.key==='Enter') runCompare()">
+        </div>
+        <div class="field-group">
+          <label>As-of Date</label>
+          <input id="compare-date" class="date-input" type="date">
+        </div>
+        <button class="run-btn" id="compare-btn" onclick="runCompare()">Compare</button>
+      </div>
+    </div>
+
+    <div id="compare-loading" class="status-box">
+      <div class="spinner"></div>
+      <div class="status-msg" id="compare-loading-msg">Running parallel analyses…</div>
+    </div>
+
+    <div id="compare-error" class="status-box">
+      <div class="error-icon">⚠️</div>
+      <div class="error-msg" id="compare-error-msg">Something went wrong.</div>
+      <div class="error-detail" id="compare-error-detail"></div>
+    </div>
+
+    <div id="compare-result" class="result-area"></div>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  MHIDSS &nbsp;·&nbsp; Scores normalized 0–100 via within-sector z-scores &nbsp;·&nbsp;
+  Macro (FRED) · Fundamental (WRDS) · Technical (yfinance)
+</footer>
+
+<script>
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+const SIGNAL_CLASS = {
+  STRONG_BUY: 'strong-buy', BUY: 'buy', NEUTRAL: 'neutral',
+  SELL: 'sell', STRONG_SELL: 'strong-sell'
+};
+const SIGNAL_LABEL = {
+  STRONG_BUY: 'STRONG BUY', BUY: 'BUY', NEUTRAL: 'NEUTRAL',
+  SELL: 'SELL', STRONG_SELL: 'STRONG SELL'
+};
+const HORIZON_META = {
+  short: { label: 'SHORT', sub: '1 – 4 weeks' },
+  mid:   { label: 'MID',   sub: '1 – 6 months' },
+  long:  { label: 'LONG',  sub: '6 – 24 months' },
+};
+const WEIGHTS = {
+  short: { macro: 20, fundamental: 10, technical: 70 },
+  mid:   { macro: 35, fundamental: 30, technical: 35 },
+  long:  { macro: 50, fundamental: 45, technical: 5  },
+};
+const GROUP_LABELS = { fundamental: 'Fundamental', macro: 'Macro', technical: 'Technical' };
+
+function sigClass(signal) { return SIGNAL_CLASS[signal] || 'neutral'; }
+function sigLabel(signal) { return SIGNAL_LABEL[signal] || signal; }
+
+function scoreCell(score) {
+  if (score == null) return `<td class="score-cell neutral"><div class="score-num" style="color:var(--muted)">—</div></td>`;
+  const cls = sigClass(classifySignal(score));
+  const lbl = sigLabel(classifySignal(score));
+  const pct = Math.min(Math.max(score, 0), 100);
+  return `<td class="score-cell ${cls}">
+    <div class="score-num">${score.toFixed(1)}</div>
+    <div class="sig-label">${lbl}</div>
+    <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+  </td>`;
+}
+
+function classifySignal(score) {
+  if (score >= 70) return 'STRONG_BUY';
+  if (score >= 55) return 'BUY';
+  if (score >= 45) return 'NEUTRAL';
+  if (score >= 30) return 'SELL';
+  return 'STRONG_SELL';
+}
+
+function todayISO() {
+  const d = new Date();
+  return d.toISOString().split('T')[0];
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────
+
+function switchTab(tab) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + tab).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── Init dates ────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+  const today = todayISO();
+  document.getElementById('analyze-date').value = today;
+  document.getElementById('compare-date').value = today;
+  document.getElementById('analyze-ticker').focus();
+});
+
+// ── Show / hide states ────────────────────────────────────────────────────
+
+function setAnalyzeState(state, msg) {
+  document.getElementById('analyze-loading').style.display = state === 'loading' ? 'block' : 'none';
+  document.getElementById('analyze-error').style.display   = state === 'error'   ? 'block' : 'none';
+  document.getElementById('analyze-result').style.display  = state === 'result'  ? 'block' : 'none';
+  if (state === 'loading' && msg) document.getElementById('analyze-loading-msg').textContent = msg;
+}
+
+function setCompareState(state, msg) {
+  document.getElementById('compare-loading').style.display = state === 'loading' ? 'block' : 'none';
+  document.getElementById('compare-error').style.display   = state === 'error'   ? 'block' : 'none';
+  document.getElementById('compare-result').style.display  = state === 'result'  ? 'block' : 'none';
+  if (state === 'loading' && msg) document.getElementById('compare-loading-msg').textContent = msg;
+}
+
+// ── Render single result ──────────────────────────────────────────────────
+
+function renderSingle(data) {
+  const { ticker, as_of_date, horizons } = data;
+  const sectorRaw = Object.values(horizons)[0]?.sector || '';
+
+  const sectorTag = sectorRaw
+    ? `<div class="sector-tag">${sectorRaw}</div>` : '';
+
+  // Entry cards
+  const cards = ['short', 'mid', 'long'].map(h => {
+    const r = horizons[h]; if (!r) return '';
+    const cls = sigClass(r.signal);
+    const lbl = sigLabel(r.signal);
+    const meta = HORIZON_META[h];
+    const w = WEIGHTS[h];
+    const gs = r.group_scores || {};
+    return `
+<div class="entry-card ${cls}">
+  <div class="horizon-label">${meta.label}</div>
+  <div class="horizon-sub">${meta.sub}</div>
+  <div class="entry-score-num">${r.entry_score.toFixed(1)}</div>
+  <div class="entry-signal">${lbl}</div>
+  <div class="weight-bar">
+    <div class="wb-macro" style="flex:${w.macro}"></div>
+    <div class="wb-fund"  style="flex:${w.fundamental}"></div>
+    <div class="wb-tech"  style="flex:${w.technical}"></div>
+  </div>
+  <div class="weight-legend">
+    <span class="wl-macro">Macro ${w.macro}%</span>
+    <span class="wl-fund">Fundamental ${w.fundamental}%</span>
+    <span class="wl-tech">Technical ${w.technical}%</span>
+  </div>
+</div>`;
+  }).join('');
+
+  // 3x3 grid rows
+  const gridRows = ['fundamental', 'macro', 'technical'].map(group => {
+    const cells = ['short', 'mid', 'long'].map(h => {
+      const r = horizons[h];
+      const score = r?.group_scores?.[group] ?? null;
+      return scoreCell(score);
+    }).join('');
+    return `<tr><th class="row-header">${GROUP_LABELS[group]}</th>${cells}</tr>`;
+  }).join('');
+
+  return `
+<div class="ticker-header">
+  <div class="th-left">
+    <div class="ticker-symbol">${ticker}</div>
+    ${sectorTag}
+  </div>
+  <div class="th-right">
+    <div class="th-date">As of ${as_of_date}</div>
+  </div>
+</div>
+
+<div class="entry-cards">${cards}</div>
+
+<div class="grid-section">
+  <div class="grid-title">Analysis View — Group × Horizon</div>
+  <table class="score-grid">
+    <thead>
+      <tr>
+        <th class="row-header"></th>
+        <th class="col-header"><span class="col-label">SHORT</span><span class="col-sub">1 – 4 weeks</span></th>
+        <th class="col-header"><span class="col-label">MID</span><span class="col-sub">1 – 6 months</span></th>
+        <th class="col-header"><span class="col-label">LONG</span><span class="col-sub">6 – 24 months</span></th>
+      </tr>
+    </thead>
+    <tbody>${gridRows}</tbody>
+  </table>
+</div>
+
+${legendHTML()}`;
+}
+
+// ── Render compare result ─────────────────────────────────────────────────
+
+function renderCompare(data) {
+  const a = data.ticker_a;
+  const b = data.ticker_b;
+
+  const sectorA = Object.values(a.horizons)[0]?.sector || '';
+  const sectorB = Object.values(b.horizons)[0]?.sector || '';
+
+  // Per-column entry cards (compact)
+  function compactCards(stock) {
+    return ['short', 'mid', 'long'].map(h => {
+      const r = stock.horizons[h]; if (!r) return '';
+      const cls = sigClass(r.signal);
+      const lbl = sigLabel(r.signal);
+      const meta = HORIZON_META[h];
+      const gs = r.group_scores || {};
+      return `
+<div class="compare-entry-card ${cls}">
+  <div class="cec-horizon">
+    <div class="cec-horizon-label">${meta.label}</div>
+    <div class="cec-horizon-sub">${meta.sub}</div>
+  </div>
+  <div class="cec-score-num">${r.entry_score.toFixed(1)}</div>
+  <div class="cec-right">
+    <div class="cec-signal">${lbl}</div>
+    <div class="cec-groups">
+      <div class="cec-group-item">
+        <div class="cec-group-label">Macro</div>
+        <div class="cec-group-val">${(gs.macro ?? 0).toFixed(1)}</div>
+      </div>
+      <div class="cec-group-item">
+        <div class="cec-group-label">Fund.</div>
+        <div class="cec-group-val">${(gs.fundamental ?? 0).toFixed(1)}</div>
+      </div>
+      <div class="cec-group-item">
+        <div class="cec-group-label">Tech.</div>
+        <div class="cec-group-val">${(gs.technical ?? 0).toFixed(1)}</div>
+      </div>
+    </div>
+  </div>
+</div>`;
+    }).join('');
+  }
+
+  // Side-by-side comparison table (Entry Score rows)
+  function entryScoreRows() {
+    return ['short', 'mid', 'long'].map(h => {
+      const ra = a.horizons[h];
+      const rb = b.horizons[h];
+      const meta = HORIZON_META[h];
+      function cell(r) {
+        if (!r) return `<td class="score-cell neutral"><div class="score-num" style="color:var(--muted)">—</div></td>`;
+        const cls = sigClass(r.signal);
+        const lbl = sigLabel(r.signal);
+        const pct = Math.min(Math.max(r.entry_score, 0), 100);
+        return `<td class="score-cell ${cls}">
+          <div class="score-num">${r.entry_score.toFixed(1)}</div>
+          <div class="sig-label">${lbl}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+        </td>`;
+      }
+      return `<tr>
+        <th class="row-label">${meta.label}<br><span style="font-size:10px;font-weight:400;color:var(--muted)">${meta.sub}</span></th>
+        ${cell(ra)}${cell(rb)}
+      </tr>`;
+    }).join('');
+  }
+
+  // Group comparison table
+  function groupRows() {
+    return ['fundamental', 'macro', 'technical'].map(group => {
+      const cells = ['short', 'mid', 'long'].flatMap(h => {
+        const ra = a.horizons[h]; const rb = b.horizons[h];
+        const sa = ra?.group_scores?.[group] ?? null;
+        const sb = rb?.group_scores?.[group] ?? null;
+        return [scoreCell(sa), scoreCell(sb)];
+      }).join('');
+      return `<tr><th class="row-label">${GROUP_LABELS[group]}</th>${cells}</tr>`;
+    }).join('');
+  }
+
+  return `
+<!-- Compare header -->
+<div class="compare-grid">
+  <div>
+    <div class="compare-col-header">
+      <div>
+        <div class="compare-col-ticker">${a.ticker}</div>
+        <div class="compare-col-sector">${sectorA}</div>
+      </div>
+      <div style="text-align:right;color:var(--muted);font-size:12px">As of ${a.as_of_date}</div>
+    </div>
+    <div class="compare-entry-cards">${compactCards(a)}</div>
+  </div>
+  <div>
+    <div class="compare-col-header">
+      <div>
+        <div class="compare-col-ticker">${b.ticker}</div>
+        <div class="compare-col-sector">${sectorB}</div>
+      </div>
+      <div style="text-align:right;color:var(--muted);font-size:12px">As of ${b.as_of_date}</div>
+    </div>
+    <div class="compare-entry-cards">${compactCards(b)}</div>
+  </div>
+</div>
+
+<!-- Entry Score head-to-head -->
+<div class="compare-analysis-row">
+  <div class="compare-analysis-header">Entry Score — ${a.ticker} vs ${b.ticker}</div>
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th class="row-label">Horizon</th>
+        <th class="ticker-col">${a.ticker}</th>
+        <th class="ticker-col">${b.ticker}</th>
+      </tr>
+    </thead>
+    <tbody>${entryScoreRows()}</tbody>
+  </table>
+</div>
+
+<!-- Group breakdown head-to-head -->
+<div class="compare-analysis-row">
+  <div class="compare-analysis-header">Group Scores — ${a.ticker} vs ${b.ticker} (Short / Mid / Long)</div>
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th class="row-label">Group</th>
+        ${['short','mid','long'].map(h => `<th class="ticker-col" colspan="2">${HORIZON_META[h].label}</th>`).join('')}
+      </tr>
+      <tr>
+        <th class="row-label"></th>
+        ${['short','mid','long'].map(() => `<th style="background:var(--bg3);color:var(--muted);font-size:11px">${a.ticker}</th><th style="background:var(--bg3);color:var(--muted);font-size:11px">${b.ticker}</th>`).join('')}
+      </tr>
+    </thead>
+    <tbody>${groupRows()}</tbody>
+  </table>
+</div>
+
+${legendHTML()}`;
+}
+
+// ── Legend HTML ───────────────────────────────────────────────────────────
+
+function legendHTML() {
+  return `
+<div class="legend-section">
+  <div class="legend-title">Score Guide</div>
+  <div class="legend-body">
+    <div class="legend-scale">
+      <div class="ls-strong-sell"></div><div class="ls-sell"></div>
+      <div class="ls-neutral"></div><div class="ls-buy"></div><div class="ls-strong-buy"></div>
+    </div>
+    <div class="legend-scale-labels">
+      <span>0</span><span>30</span><span>45</span><span>55</span><span>70</span><span>100</span>
+    </div>
+    <div class="legend-rows">
+      <div class="legend-row"><div class="lr-badge strong-buy">STRONG BUY</div><div class="lr-range">70 – 100</div><div class="lr-desc">All indicators are favorable across groups.</div></div>
+      <div class="legend-row"><div class="lr-badge buy">BUY</div><div class="lr-range">55 – 69</div><div class="lr-desc">Majority of indicators lean positive.</div></div>
+      <div class="legend-row"><div class="lr-badge neutral">NEUTRAL</div><div class="lr-range">45 – 54</div><div class="lr-desc">Mixed signals; directional bias unclear.</div></div>
+      <div class="legend-row"><div class="lr-badge sell">SELL</div><div class="lr-range">30 – 44</div><div class="lr-desc">Majority of indicators lean negative.</div></div>
+      <div class="legend-row"><div class="lr-badge strong-sell">STRONG SELL</div><div class="lr-range">0 – 29</div><div class="lr-desc">All indicators are unfavorable across groups.</div></div>
+    </div>
+  </div>
+</div>`;
+}
+
+// ── Run Analyze ───────────────────────────────────────────────────────────
+
+async function runAnalyze() {
+  const ticker = document.getElementById('analyze-ticker').value.trim();
+  const dateVal = document.getElementById('analyze-date').value;
+  if (!ticker) { alert('Please enter a ticker or company name.'); return; }
+
+  setAnalyzeState('loading', `Fetching data for "${ticker}"…`);
+  document.getElementById('analyze-btn').disabled = true;
+
+  try {
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticker, date: dateVal }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      document.getElementById('analyze-error-msg').textContent = 'Analysis failed';
+      document.getElementById('analyze-error-detail').textContent = data.error || 'Unknown error';
+      setAnalyzeState('error');
+      return;
+    }
+    document.getElementById('analyze-result').innerHTML = renderSingle(data);
+    setAnalyzeState('result');
+  } catch (err) {
+    document.getElementById('analyze-error-msg').textContent = 'Network error';
+    document.getElementById('analyze-error-detail').textContent = err.message;
+    setAnalyzeState('error');
+  } finally {
+    document.getElementById('analyze-btn').disabled = false;
+  }
+}
+
+// ── Run Compare ───────────────────────────────────────────────────────────
+
+async function runCompare() {
+  const tickerA = document.getElementById('compare-ticker-a').value.trim();
+  const tickerB = document.getElementById('compare-ticker-b').value.trim();
+  const dateVal = document.getElementById('compare-date').value;
+  if (!tickerA || !tickerB) { alert('Please enter both tickers.'); return; }
+
+  setCompareState('loading', `Comparing ${tickerA} vs ${tickerB}…`);
+  document.getElementById('compare-btn').disabled = true;
+
+  try {
+    const res = await fetch('/api/compare', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticker_a: tickerA, ticker_b: tickerB, date: dateVal }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      document.getElementById('compare-error-msg').textContent = 'Comparison failed';
+      document.getElementById('compare-error-detail').textContent = data.error || 'Unknown error';
+      setCompareState('error');
+      return;
+    }
+    document.getElementById('compare-result').innerHTML = renderCompare(data);
+    setCompareState('result');
+  } catch (err) {
+    document.getElementById('compare-error-msg').textContent = 'Network error';
+    document.getElementById('compare-error-detail').textContent = err.message;
+    setCompareState('error');
+  } finally {
+    document.getElementById('compare-btn').disabled = false;
+  }
+}
+</script>
+</body>
+</html>
