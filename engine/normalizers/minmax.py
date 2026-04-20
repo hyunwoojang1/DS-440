@@ -1,4 +1,4 @@
-"""MinMax 정규화: [min, max] → [0, 100]."""
+"""MinMax normalization: [min, max] → [0, 100]."""
 
 from __future__ import annotations
 import numpy as np
@@ -21,7 +21,7 @@ class MinMaxNormalizer(BaseNormalizer):
     def fit(self, historical) -> "MinMaxNormalizer":
         arr = _to_numpy(historical)
         if len(arr) == 0:
-            raise ValueError("fit()에 전달된 데이터가 비어 있습니다.")
+            raise ValueError("Data passed to fit() is empty.")
         self._min = self._fixed_min if self._fixed_min is not None else float(arr.min())
         self._max = self._fixed_max if self._fixed_max is not None else float(arr.max())
         if self._min >= self._max:

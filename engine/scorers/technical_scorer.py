@@ -1,8 +1,8 @@
-"""기술적 지표 스코어러 — 해상도별 Polars DataFrame 입력.
+"""Technical indicator scorer — per-resolution Polars DataFrame input.
 
-데이터 부족 처리:
-- 각 지표 컬럼이 null이면 해당 지표를 NaN으로 반환
-- 정규화 히스토리가 최소 기준 미달 시 안전하게 NaN 처리
+Data insufficiency handling:
+- If an indicator column is null, return NaN for that indicator
+- Safely handle NaN when normalization history falls below minimum threshold
 """
 
 from __future__ import annotations
@@ -15,12 +15,12 @@ from engine.normalizers.zscore import ZScoreNormalizer
 from engine.normalizers.percentile import PercentileRankNormalizer
 from .base import BaseScorer
 
-# 정규화기 fit에 필요한 최소 관측치 수
+# Minimum number of observations required for normalizer fit
 _MIN_FIT_OBSERVATIONS = 10
 
 
 def _rsi_nonlinear(rsi: float) -> float:
-    """RSI V자형 비선형 스코어링: 30→100, 70→0, 50→50."""
+    """RSI V-shape non-linear scoring: 30→100, 70→0, 50→50."""
     if rsi <= 30:
         return 100.0
     if rsi >= 70:
@@ -42,8 +42,8 @@ def _build_normalizer(indicator_id: str) -> BaseNormalizer:
 class TechnicalScorer(BaseScorer):
     def __init__(self, historical_df: pl.DataFrame) -> None:
         """
-        historical_df: 'date' 컬럼 + 지표 컬럼을 가진 Polars DataFrame.
-                       해상도에 맞는 봉 데이터여야 함 (일봉/주봉/월봉).
+        historical_df: Polars DataFrame with a 'date' column + indicator columns.
+                       Must be bar data matching the resolution (daily/weekly/monthly).
         """
         self._df = historical_df
         self._normalizers: dict[str, BaseNormalizer] = {}
@@ -60,7 +60,7 @@ class TechnicalScorer(BaseScorer):
                 .drop_nulls()
             )
             if len(hist) < _MIN_FIT_OBSERVATIONS:
-                return None     # 데이터 부족 → null 처리
+                return None     # Insufficient data → null handling
             norm.fit(hist)
             self._normalizers[indicator_id] = norm
         return self._normalizers.get(indicator_id)
@@ -70,7 +70,7 @@ class TechnicalScorer(BaseScorer):
         for ind_id, value in raw_values.items():
             if ind_id not in TECHNICAL_NORM:
                 continue
-            # null/NaN 값 → 데이터 부족 신호
+            # null/NaN value → insufficient data signal
             if value is None or (value != value):
                 scores[ind_id] = float("nan")
                 continue

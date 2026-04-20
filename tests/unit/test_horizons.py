@@ -1,4 +1,4 @@
-"""시계열 호라이즌 단위 테스트."""
+"""Horizon unit tests."""
 
 import pytest
 

@@ -1,4 +1,4 @@
-"""수학 유틸리티."""
+"""Math utilities."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ def clip_score(value: float, low: float = 0.0, high: float = 100.0) -> float:
 
 
 def rolling_linear_slope(values: np.ndarray, window: int) -> np.ndarray:
-    """롤링 윈도우 내 선형 기울기. pandas-ta 내부 계산을 위해 numpy 배열로 처리."""
+    """Linear slope within a rolling window. Processed as numpy arrays for pandas-ta internal computation."""
     n = len(values)
     result = np.full(n, np.nan)
     for i in range(window - 1, n):
@@ -24,7 +24,7 @@ def redistribute_weights(
     weights: dict[str, float],
     missing_keys: list[str],
 ) -> dict[str, float]:
-    """누락된 지표의 가중치를 나머지에 비례 재분배."""
+    """Proportionally redistributes the weights of missing indicators to the remaining ones."""
     available = {k: v for k, v in weights.items() if k not in missing_keys}
     total = sum(available.values())
     if total == 0:

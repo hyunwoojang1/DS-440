@@ -1,4 +1,4 @@
-"""정규화기 기본 인터페이스 — numpy/Polars 양쪽 지원."""
+"""Normalizer base interface — supports both numpy and Polars."""
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
@@ -8,7 +8,7 @@ import polars as pl
 
 
 def _to_numpy(data: "pl.Series | np.ndarray | list") -> np.ndarray:
-    """다양한 입력을 NaN 제거된 float numpy 배열로 변환."""
+    """Converts various inputs to NaN-free float numpy arrays."""
     if isinstance(data, pl.Series):
         arr = data.drop_nulls().cast(pl.Float64).to_numpy()
     elif isinstance(data, np.ndarray):
@@ -20,7 +20,7 @@ def _to_numpy(data: "pl.Series | np.ndarray | list") -> np.ndarray:
 
 
 class BaseNormalizer(ABC):
-    """fit()은 as_of_date 이전 과거 데이터만, transform()은 임의 값에 적용."""
+    """fit() accepts only past data before as_of_date; transform() applies to any value."""
 
     def __init__(self, invert: bool = False) -> None:
         self.invert = invert
@@ -28,24 +28,24 @@ class BaseNormalizer(ABC):
 
     @abstractmethod
     def fit(self, historical: "pl.Series | np.ndarray | list") -> "BaseNormalizer":
-        """과거 데이터로 파라미터 학습. as_of_date 이전 데이터만 전달할 것."""
+        """Learn parameters from historical data. Pass only data before as_of_date."""
         ...
 
     @abstractmethod
     def _transform_value(self, value: float) -> float:
-        """단일 float 값을 [0, 100]으로 변환 (반전 전)."""
+        """Converts a single float value to [0, 100] (before inversion)."""
         ...
 
     def transform(self, value: float) -> float:
         if not self._fitted:
-            raise RuntimeError("transform() 호출 전 fit()을 먼저 실행하세요.")
+            raise RuntimeError("Call fit() before transform().")
         if np.isnan(value):
             return float("nan")
         score = self._transform_value(float(value))
         return 100.0 - score if self.invert else score
 
     def transform_series(self, series: "pl.Series | np.ndarray") -> np.ndarray:
-        """시리즈 전체를 변환해 numpy 배열로 반환."""
+        """Transforms an entire series and returns it as a numpy array."""
         if isinstance(series, pl.Series):
             arr = series.cast(pl.Float64).to_numpy()
         else:

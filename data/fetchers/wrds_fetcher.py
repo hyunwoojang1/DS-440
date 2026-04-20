@@ -1,10 +1,10 @@
-"""WRDS Compustat 데이터 fetcher (Polars 출력).
+"""WRDS Compustat data fetcher (Polars output).
 
-섹터 내 z-score 기반 펀더멘탈 스코어링을 위해:
-- comp.funda + comp.company JOIN → gsector, tic 포함
-- fetch()     : 전체 시장 데이터 (섹터 분포 기준 모집단)
-- get_ticker_fundamentals() : 특정 티커의 최신 재무값
-- get_sector_latest()       : 섹터 내 각 기업 최신값 (z-score 분모)
+For within-sector z-score-based fundamental scoring:
+- comp.funda + comp.company JOIN → includes gsector, tic
+- fetch()                    : full market data (population for sector distribution)
+- get_ticker_fundamentals()  : latest fundamental values for a specific ticker
+- get_sector_latest()        : latest values per company in sector (z-score denominator)
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ class WRDSFetcher(BaseFetcher):
             self._db = wrds.Connection(wrds_username=WRDS_USERNAME)
         return self._db
 
-    # ── 공개 인터페이스 ────────────────────────────────────────────────────────
+    # ── Public interface ───────────────────────────────────────────────────────
 
     def fetch(
         self,
@@ -42,9 +42,9 @@ class WRDSFetcher(BaseFetcher):
         start_date: str,
         end_date: str,
     ) -> pl.DataFrame:
-        """전체 시장 재무 데이터 수집 (gsector, tic 포함).
+        """Fetches full market fundamental data (includes gsector, tic).
 
-        섹터 z-score 계산의 모집단으로 사용된다.
+        Used as the population for sector z-score computation.
         """
         if not WRDS_USERNAME:
             return pl.DataFrame()
@@ -67,7 +67,7 @@ class WRDSFetcher(BaseFetcher):
             """
             db = self._get_db()
             pd_df = db.raw_sql(query, date_cols=["datadate"])
-            # 컬럼명에서 테이블 접두사 제거 (f.gvkey → gvkey)
+            # Strip table prefix from column names (f.gvkey → gvkey)
             pd_df.columns = [c.split(".")[-1] for c in pd_df.columns]
             pd_df = _compute_derived(pd_df)
 
@@ -77,7 +77,7 @@ class WRDSFetcher(BaseFetcher):
             return result
 
         except Exception as e:
-            warnings.warn(f"WRDS fetch 실패 — 펀더멘탈 스코어 생략: {e}")
+            warnings.warn(f"WRDS fetch failed — fundamental scores skipped: {e}")
             return pl.DataFrame()
 
     def get_ticker_fundamentals(
@@ -86,17 +86,17 @@ class WRDSFetcher(BaseFetcher):
         all_data: pl.DataFrame,
         as_of_date: str,
     ) -> tuple[dict[str, float], str]:
-        """티커의 최신 재무값과 GICS 섹터 코드를 반환.
+        """Returns the ticker's latest fundamental values and GICS sector code.
 
         Returns:
             (raw_values, gsector_code)
-            raw_values: 지표명 → float 딕셔너리
-            gsector_code: GICS 섹터 코드 문자열 (예: "45")
+            raw_values:   indicator name → float dict
+            gsector_code: GICS sector code string (e.g., "45")
         """
         if all_data.is_empty():
             return {}, ""
 
-        # 티커 필터 + as_of_date 이전 데이터
+        # Ticker filter + data before as_of_date
         ticker_df = (
             all_data
             .filter(pl.col("tic") == ticker)
@@ -129,9 +129,9 @@ class WRDSFetcher(BaseFetcher):
         all_data: pl.DataFrame,
         as_of_date: str,
     ) -> pl.DataFrame:
-        """섹터 내 모든 기업의 point-in-time 최신값 반환 (z-score 분모).
+        """Returns the point-in-time latest values for all companies in the sector (z-score denominator).
 
-        각 기업의 as_of_date 이전 가장 최근 회계연도 값을 선택한다.
+        Selects the most recent fiscal year value before as_of_date for each company.
         """
         if all_data.is_empty() or not gsector:
             return pl.DataFrame()
@@ -144,7 +144,7 @@ class WRDSFetcher(BaseFetcher):
         if sector_hist.is_empty():
             return pl.DataFrame()
 
-        # 기업별 최신 관측치 1개씩 선택
+        # Select the most recent observation per company
         sector_latest = (
             sector_hist
             .sort("datadate")
@@ -160,9 +160,9 @@ class WRDSFetcher(BaseFetcher):
         except Exception:
             return False
 
-    # ── 하위 호환성 유지 ──────────────────────────────────────────────────────
+    # ── Backward compatibility ─────────────────────────────────────────────────
     def aggregate_market(self, df: pl.DataFrame, as_of_date: str) -> dict[str, float]:
-        """(레거시) 시장 중위값 반환 — 섹터 z-score 방식으로 대체됨."""
+        """(Legacy) Returns market median values — replaced by sector z-score approach."""
         if df.is_empty():
             return {}
         pd_df = df.to_pandas()
@@ -171,7 +171,7 @@ class WRDSFetcher(BaseFetcher):
         return {c: float(latest[c].median()) for c in FUND_METRICS if c in latest.columns}
 
 
-# ── 파생 지표 계산 (모듈 수준 함수) ────────────────────────────────────────────
+# ── Derived indicator computation (module-level function) ─────────────────────
 
 def _compute_derived(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()

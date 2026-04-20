@@ -1,4 +1,4 @@
-"""Parquet 기반 디스크 캐시 (Polars, TTL 적용)."""
+"""Parquet-based disk cache (Polars, TTL-enforced)."""
 
 from datetime import datetime, timedelta
 from pathlib import Path

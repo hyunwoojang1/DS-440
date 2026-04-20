@@ -1,4 +1,4 @@
-"""기술적 데이터 스냅샷 모델."""
+"""Technical data snapshot model."""
 
 from dataclasses import dataclass, field
 

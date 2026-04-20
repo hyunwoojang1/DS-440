@@ -1,4 +1,4 @@
-"""리포트 빌더 — 포맷터 선택 및 오케스트레이션."""
+"""Report builder — formatter selection and orchestration."""
 
 from pathlib import Path
 

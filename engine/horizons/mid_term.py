@@ -1,4 +1,4 @@
-"""Mid-Term Horizon (1-6개월): 균등 가중."""
+"""Mid-Term Horizon (1-6 months): balanced weighting."""
 
 from config.weights import (
     FUNDAMENTAL_INDICATOR_WEIGHTS,

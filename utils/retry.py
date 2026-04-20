@@ -1,4 +1,4 @@
-"""지수 백오프 재시도 데코레이터."""
+"""Exponential backoff retry decorator."""
 
 import functools
 import time

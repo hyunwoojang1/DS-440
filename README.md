@@ -2,7 +2,7 @@
 
 > Integrates **Fundamental × Macro × Technical** data to produce
 > **Entry Scores (0 – 100)** across Short / Mid / Long investment horizons,
-> delivered as a dark-theme browser dashboard.
+> delivered via a **web dashboard** at `http://localhost:5000`.
 
 ---
 
@@ -24,14 +24,20 @@
 
 ```
 Input : ticker symbol or company name  +  reference date
-Output: Short / Mid / Long Entry Scores + signals  →  browser dashboard
+Output: Short / Mid / Long Entry Scores + signals
+
+Interfaces:
+  Web app  →  python web/app.py          (http://localhost:5000)
+               - Analyze tab  : single ticker dashboard
+               - Compare tab  : two tickers side by side (parallel)
+  CLI      →  python main.py run AAPL    (writes HTML to output/)
 ```
 
 | Horizon | Holding Period | Dominant Data | Purpose |
 |---------|---------------|---------------|---------|
 | **Short** | 1 – 4 weeks | Technical (70%) | Short-term price momentum entry timing |
-| **Mid** | 1 – 6 months | Balanced (35 / 30 / 35%) | Earnings cycle + technical trend composite |
-| **Long** | 6 – 24 months | Macro (50%) + Fundamental (45%) | Macro regime + intrinsic-value position building |
+| **Mid** | 1 – 6 months | Balanced (30 / 30 / 40%) | Earnings cycle + technical trend composite |
+| **Long** | 6 – 24 months | Macro (40%) + Fundamental (35%) + Technical (25%) | Macro regime + intrinsic-value position building |
 
 **Signal classification:**
 
@@ -83,6 +89,7 @@ flowchart TD
         H1["ShortTermHorizon\nEntryScore = 0.20·G_M + 0.10·G_F + 0.70·G_T"]
         H2["MidTermHorizon\nEntryScore = 0.30·G_M + 0.30·G_F + 0.40·G_T"]
         H3["LongTermHorizon\nEntryScore = 0.40·G_M + 0.35·G_F + 0.25·G_T"]
+
     end
 
     subgraph OUTPUT["Output  (reports/ + browser)"]
@@ -132,9 +139,9 @@ Step 3.  Cross-group weighted sum per horizon  (group level → final score)
 
 | Group | Short | Mid | Long |
 |-------|-------|-----|------|
-| Macro | 0.20 | 0.35 | **0.50** |
-| Fundamental | 0.10 | 0.30 | **0.45** |
-| Technical | **0.70** | 0.35 | 0.05 |
+| Macro | 0.20 | 0.30 | **0.40** |
+| Fundamental | 0.10 | 0.30 | **0.35** |
+| Technical | **0.70** | 0.40 | 0.25 |
 
 **Macro within-group weights** — `config/weights.py` lines 16–45
 
@@ -169,9 +176,9 @@ Step 3.  Cross-group weighted sum per horizon  (group level → final score)
 
 | Indicator | Short | Mid | Long |
 |-----------|-------|-----|------|
-| rsi_14 | 0.20 | 0.15 | 0.00 |
-| macd_histogram | 0.20 | 0.20 | 0.10 |
-| sma_ratio | 0.10 | 0.20 | 0.40 |
+| rsi_14 | 0.20 | 0.15 | 0.15 |
+| macd_histogram | 0.20 | 0.20 | 0.20 |
+| sma_ratio | 0.10 | 0.25 | 0.30 |
 | stoch_k | 0.15 | 0.10 | 0.00 |
 | bb_pct_b | 0.15 | 0.10 | 0.00 |
 | obv_slope | 0.10 | 0.15 | 0.20 |
@@ -332,8 +339,8 @@ Edit only lines 9–11 of `config/weights.py`. **Sum must equal 1.0.**
 ```python
 HORIZON_GROUP_WEIGHTS = {
     "short": {"macro": 0.20, "fundamental": 0.10, "technical": 0.70},
-    "mid":   {"macro": 0.35, "fundamental": 0.30, "technical": 0.35},
-    "long":  {"macro": 0.50, "fundamental": 0.45, "technical": 0.05},
+    "mid":   {"macro": 0.30, "fundamental": 0.30, "technical": 0.40},
+    "long":  {"macro": 0.40, "fundamental": 0.35, "technical": 0.25},
 }
 ```
 
@@ -388,43 +395,28 @@ cp .env.example .env
 # Fill in FRED_API_KEY, WRDS_USERNAME, WRDS_PASSWORD in .env
 ```
 
-### Running
+### Running — Web App (recommended)
+
+The primary interface is a Flask web app that serves an interactive dashboard at `http://localhost:5000`.
 
 ```bash
-# Single ticker — opens browser dashboard automatically
-python main.py run AAPL
-
-# Multiple tickers — opens one dashboard tab per ticker
-python main.py run AAPL MSFT NVDA GOOGL
-
-# Company names are supported (auto-resolved via yfinance Search)
-python main.py run "Apple" "Microsoft" "Nvidia"
-
-# Mix of tickers and names
-python main.py run AAPL "Microsoft" "Nvidia" GOOGL
-
-# Specific reference date
-python main.py run AAPL --date 2024-01-01
-
-# Short-term horizon only
-python main.py run AAPL --horizon short
-
-# Suppress browser auto-open
-python main.py run AAPL --no-browser
-
-# Check data source connectivity
-python main.py check-connections
-
-# Validate config
-python main.py validate-config
-
-# Clear expired cache
-python main.py clear-cache --older-than 7d
+python web/app.py
 ```
 
-### Dashboard
+The browser opens automatically. The app exposes two modes via the top navigation tabs:
 
-Each ticker generates a self-contained HTML file under `output/` and opens in the default browser:
+| Tab | Endpoint | Description |
+|-----|----------|-------------|
+| **Analyze** | `POST /api/analyze` | Enter one ticker or company name → get Short / Mid / Long Entry Scores with group subscores |
+| **Compare** | `POST /api/compare` | Enter two tickers → run both analyses in parallel and display side-by-side |
+
+**Input fields (both modes):**
+- **Ticker / Company name** — e.g. `AAPL`, `Apple`, `애플` (auto-resolved via yfinance Search)
+- **Reference date** — defaults to today; set a past date for historical analysis (format: `YYYY-MM-DD`)
+
+**Rate limits:** 10 requests/min per endpoint, 60 requests/min overall.
+
+**Dashboard layout (Analyze mode):**
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -441,7 +433,7 @@ Each ticker generates a self-contained HTML file under `output/` and opens in th
 │  Technical       │  75.1  ★★  │ 55.3  BUY   │ 48.2 NEU│
 ├──────────────────┴─────────────┴─────────────┴──────────┤
 │  SHORT  43.5  SELL    MID  48.0  NEUTRAL   LONG  52.2   │
-│  ██░░ 20/10/70   ████ 35/30/35   █████ 50/45/5          │
+│  ██░░ 20/10/70   ████ 30/30/40   ████░ 40/35/25          │
 ├─────────────────────────────────────────────────────────┤
 │  SCORE GUIDE  │  STRONG BUY 70–100 │ BUY 55–69         │
 │               │  NEUTRAL 45–54     │ SELL 30–44         │
@@ -451,6 +443,40 @@ Each ticker generates a self-contained HTML file under `output/` and opens in th
 
 - **Live** badge: price is real-time (market hours)
 - **Close** badge: price is previous close (after hours / weekend)
+
+**Compare mode** renders the same grid for two tickers side by side, with both analyses running in parallel.
+
+---
+
+### Running — CLI (alternative)
+
+```bash
+# Single ticker — generates HTML file and opens browser
+python main.py run AAPL
+
+# Multiple tickers — opens one dashboard tab per ticker
+python main.py run AAPL MSFT NVDA GOOGL
+
+# Company names are supported (auto-resolved via yfinance Search)
+python main.py run "Apple" "Microsoft" "Nvidia"
+
+# Specific reference date
+python main.py run AAPL --date 2024-01-01
+
+# Short-term horizon only
+python main.py run AAPL --horizon short
+
+# Suppress browser auto-open
+python main.py run AAPL --no-browser
+
+# Utility commands
+python main.py check-connections    # verify FRED / WRDS connectivity
+python main.py validate-config      # validate .env and config constants
+python main.py clear-cache --older-than 7d
+```
+
+> The CLI writes self-contained HTML files to `output/` and opens them in the browser.
+> The web app serves the same analysis live without writing files.
 
 ### Tests
 
@@ -522,10 +548,20 @@ mhidss/
 │   ├── unit/                        unit tests (no API required)
 │   └── integration/                 live API connectivity tests
 │
+├── web/
+│   ├── app.py                   ★  Flask web app (primary interface)
+│   │                                - GET  /             → dashboard UI
+│   │                                - POST /api/analyze  → single ticker analysis
+│   │                                - POST /api/compare  → two-ticker parallel comparison
+│   │                                - rate limiting: 10 req/min per endpoint
+│   │                                - auto-opens http://localhost:5000 on startup
+│   └── templates/
+│       └── index.html               dark-theme dashboard UI (Analyze + Compare tabs)
+│
 ├── main.py                          CLI entry point (typer)
 │                                    - accepts tickers or company names
 │                                    - multi-ticker support
-│                                    - auto-opens browser per ticker
+│                                    - generates HTML files to output/
 ├── pyproject.toml                   dependencies & build config
 ├── .env.example                     environment variable template
 └── .gitignore
@@ -548,6 +584,8 @@ mhidss/
 | `pydantic` | Runtime data validation |
 | `structlog` | Structured logging |
 | `typer`, `rich` | CLI & terminal output |
+| `flask` | Web app server (`web/app.py`) |
+| `flask-limiter` | API rate limiting for web endpoints |
 | `jinja2` | HTML report templating |
 | `pyarrow` | Parquet cache serialization |
 | `python-dotenv` | Environment variable management |

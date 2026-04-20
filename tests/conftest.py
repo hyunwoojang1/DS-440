@@ -1,4 +1,4 @@
-"""공유 pytest 픽스처."""
+"""Shared pytest fixtures."""
 
 import numpy as np
 import pandas as pd
@@ -7,7 +7,7 @@ import pytest
 
 @pytest.fixture
 def sample_series_100():
-    """0~100 범위의 100개 샘플 시리즈."""
+    """100-sample series in the 0–100 range."""
     rng = np.random.default_rng(42)
     idx = pd.date_range("2015-01-01", periods=100, freq="ME")
     return pd.Series(rng.uniform(0, 100, 100), index=idx)
@@ -15,7 +15,7 @@ def sample_series_100():
 
 @pytest.fixture
 def sample_rate_series():
-    """금리 시뮬레이션: 0~10% 범위."""
+    """Interest rate simulation: 0–10% range."""
     rng = np.random.default_rng(42)
     idx = pd.date_range("2005-01-01", periods=240, freq="ME")
     return pd.Series(rng.uniform(0, 10, 240), index=idx)

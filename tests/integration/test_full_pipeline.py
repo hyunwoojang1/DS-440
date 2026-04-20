@@ -1,4 +1,4 @@
-"""전체 파이프라인 통합 테스트 (mock 데이터)."""
+"""Full pipeline integration test (mock data)."""
 
 import pytest
 import pandas as pd

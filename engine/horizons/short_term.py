@@ -1,4 +1,4 @@
-"""Short-Term Horizon (1-4주): Technical 70% 가중."""
+"""Short-Term Horizon (1-4 weeks): Technical 70% weighted."""
 
 from config.weights import (
     FUNDAMENTAL_INDICATOR_WEIGHTS,
@@ -18,7 +18,7 @@ def _group_score(scores: dict[str, float], weights: dict[str, float]) -> float:
     total_score = 0.0
     for key, w in weights.items():
         val = scores.get(key)
-        if val is not None and val == val:  # None이 아니고 NaN이 아님
+        if val is not None and val == val:  # not None and not NaN
             total_score += val * w
             total_w += w
     return total_score / total_w if total_w > 0 else 0.0

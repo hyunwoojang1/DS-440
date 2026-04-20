@@ -1,4 +1,4 @@
-"""EntryScoreEngine 통합 단위 테스트 (mock 데이터 사용)."""
+"""EntryScoreEngine integration unit tests (using mock data)."""
 
 import pytest
 from engine.horizons.base import classify_signal

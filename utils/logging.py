@@ -1,4 +1,4 @@
-"""structlog 기반 구조화 로깅 설정."""
+"""structlog-based structured logging setup."""
 
 import logging
 import sys

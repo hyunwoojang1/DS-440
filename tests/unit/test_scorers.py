@@ -1,4 +1,4 @@
-"""스코어러 단위 테스트."""
+"""Scorer unit tests."""
 
 import numpy as np
 import polars as pl
@@ -56,4 +56,4 @@ class TestMacroScorer:
         raw = {col: float(last_row[col][0]) for col in indicator_cols}
         scores = scorer.score(raw, as_of_date="2025-01-01")
         for k, v in scores.items():
-            assert 0.0 <= v <= 100.0, f"{k} 점수 범위 초과: {v}"
+            assert 0.0 <= v <= 100.0, f"Score out of range for {k}: {v}"

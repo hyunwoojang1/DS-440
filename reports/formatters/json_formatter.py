@@ -1,4 +1,4 @@
-"""JSON 리포트 포맷터."""
+"""JSON report formatter."""
 
 import json
 from datetime import datetime

@@ -1,4 +1,4 @@
-"""Long-Term Horizon (6-24개월): Macro 50% + Fundamental 45% 가중."""
+"""Long-Term Horizon (6-24 months): Macro-dominant weighting."""
 
 from config.weights import (
     FUNDAMENTAL_INDICATOR_WEIGHTS,

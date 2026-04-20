@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import sys
 import os
 from pathlib import Path
@@ -12,11 +13,14 @@ from datetime import date
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from flask import Flask, render_template, request, jsonify
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 from engine.entry_score import EntryScoreEngine
 from engine.horizons.base import HorizonResult, classify_signal
 
 app = Flask(__name__)
+limiter = Limiter(get_remote_address, app=app, default_limits=["60 per minute"])
 _engine: EntryScoreEngine | None = None
 
 
@@ -80,6 +84,7 @@ def index():
 
 
 @app.route("/api/analyze", methods=["POST"])
+@limiter.limit("10 per minute")
 def api_analyze():
     data = request.get_json(silent=True) or {}
     query = (data.get("ticker") or "").strip()
@@ -87,6 +92,17 @@ def api_analyze():
 
     if not query:
         return jsonify({"error": "Ticker is required"}), 400
+
+    if not re.match(r'^[A-Za-z0-9]{1,10}$', query):
+        return jsonify({"error": "Invalid ticker: letters and numbers only, max 10 characters"}), 400
+
+    try:
+        as_of_date = date.fromisoformat(as_of)
+    except ValueError:
+        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+
+    if as_of_date > date.today():
+        return jsonify({"error": "Date cannot be in the future"}), 400
 
     try:
         result = _run_analysis(query, as_of)
@@ -96,6 +112,7 @@ def api_analyze():
 
 
 @app.route("/api/compare", methods=["POST"])
+@limiter.limit("10 per minute")
 def api_compare():
     data = request.get_json(silent=True) or {}
     query_a = (data.get("ticker_a") or "").strip()
@@ -104,6 +121,18 @@ def api_compare():
 
     if not query_a or not query_b:
         return jsonify({"error": "Both tickers are required"}), 400
+
+    for q in (query_a, query_b):
+        if not re.match(r'^[A-Za-z0-9]{1,10}$', q):
+            return jsonify({"error": f"Invalid ticker '{q}': letters and numbers only, max 10 characters"}), 400
+
+    try:
+        as_of_date = date.fromisoformat(as_of)
+    except ValueError:
+        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
+
+    if as_of_date > date.today():
+        return jsonify({"error": "Date cannot be in the future"}), 400
 
     try:
         with ThreadPoolExecutor(max_workers=2) as executor:
@@ -117,4 +146,7 @@ def api_compare():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    import threading
+    import webbrowser
+    threading.Timer(1.0, lambda: webbrowser.open("http://localhost:5000")).start()
+    app.run(debug=False, port=5000)

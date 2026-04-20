@@ -1,4 +1,4 @@
-"""FRED API 데이터 fetcher (Polars 출력)."""
+"""FRED API data fetcher (Polars output)."""
 
 import polars as pl
 import pandas as pd
@@ -44,14 +44,14 @@ class FREDFetcher(BaseFetcher):
                 sid, observation_start=start_date, observation_end=end_date
             )
 
-        # 파생 지표 계산
+        # Compute derived indicators
         for did in identifiers:
             if did in fs.DERIVED_SERIES:
                 a, b, op = fs.DERIVED_SERIES[did]
                 if op == "subtract":
                     frames[did] = frames[a] - frames[b]
 
-        # pandas → Polars 변환
+        # pandas → Polars conversion
         cols = {sid: frames[sid] for sid in identifiers if sid in frames}
         pd_df = pd.DataFrame(cols)
         pd_df.index.name = "date"
@@ -64,7 +64,7 @@ class FREDFetcher(BaseFetcher):
         return result
 
     def compute_yoy(self, df: pl.DataFrame, series_ids: list[str]) -> pl.DataFrame:
-        """YoY 변화율 계산 (월간 데이터 기준 12개월 전 대비 %)."""
+        """Computes YoY change rate (% vs. 12 months ago, based on monthly data)."""
         result = df.clone()
         for sid in series_ids:
             if sid in result.columns:

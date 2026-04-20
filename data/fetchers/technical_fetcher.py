@@ -1,8 +1,8 @@
-"""가격/기술적 지표 fetcher — 해상도(일/주/월봉)별 분리 계산 (Polars 출력).
+"""Price / technical indicator fetcher — separate computation per resolution (daily/weekly/monthly) (Polars output).
 
-데이터 부족 처리 전략:
-- 각 해상도별 `min_bars` 기준 미달 시 해당 지표를 null 처리
-- null 지표는 Scorer에서 가중치 재분배로 처리
+Data insufficiency handling strategy:
+- If below `min_bars` threshold for a given resolution, set that indicator to null
+- Null indicators are handled by weight redistribution in Scorer
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ class TechnicalFetcher(BaseFetcher):
     def __init__(self, cache: DiskCache | None = None) -> None:
         self._cache = cache
 
-    # ── 공개 인터페이스 ────────────────────────────────────────────────────────
+    # ── Public interface ───────────────────────────────────────────────────────
 
     def fetch(
         self,
@@ -34,7 +34,7 @@ class TechnicalFetcher(BaseFetcher):
         start_date: str,
         end_date: str,
     ) -> pl.DataFrame:
-        """일봉 기준 지표 DataFrame 반환 (기본 인터페이스 충족용)."""
+        """Returns daily-resolution indicator DataFrame (satisfies base interface)."""
         ticker = identifiers[0] if identifiers else "SPY"
         return self.fetch_by_resolution(ticker, start_date, end_date, DataResolution.DAILY)
 
@@ -44,7 +44,7 @@ class TechnicalFetcher(BaseFetcher):
         start_date: str,
         end_date: str,
     ) -> dict[str, pl.DataFrame]:
-        """Short/Mid/Long 3개 해상도의 지표 DataFrame을 한번에 반환."""
+        """Returns indicator DataFrames for all 3 resolutions (Short/Mid/Long) at once."""
         cache_key = f"tech_all_{ticker}_{start_date}_{end_date}"
         if self._cache and (cached := self._cache.get(cache_key)) is not None:
             return _split_resolution_cache(cached)
@@ -80,7 +80,7 @@ class TechnicalFetcher(BaseFetcher):
         except Exception:
             return False
 
-    # ── 내부 구현 ──────────────────────────────────────────────────────────────
+    # ── Internal implementation ────────────────────────────────────────────────
 
     def _download(self, ticker: str, start_date: str, end_date: str) -> pd.DataFrame:
         if PRICE_DATA_SOURCE == "yfinance":
@@ -92,10 +92,10 @@ class TechnicalFetcher(BaseFetcher):
                 df.columns = [c.lower() for c in df.columns]
             df.index.name = "date"
             return df.reset_index()
-        raise NotImplementedError(f"지원하지 않는 PRICE_DATA_SOURCE: {PRICE_DATA_SOURCE}")
+        raise NotImplementedError(f"Unsupported PRICE_DATA_SOURCE: {PRICE_DATA_SOURCE}")
 
     def _resample(self, df: pd.DataFrame, resolution: DataResolution) -> pd.DataFrame:
-        """일봉 OHLCV를 주봉/월봉으로 리샘플링."""
+        """Resamples daily OHLCV to weekly/monthly bars."""
         if resolution == DataResolution.DAILY:
             return df
 
@@ -117,7 +117,7 @@ class TechnicalFetcher(BaseFetcher):
     def _compute_indicators(
         self, df: pd.DataFrame, resolution: DataResolution
     ) -> pl.DataFrame:
-        """ta 라이브러리로 지표 계산 후 Polars로 변환."""
+        """Computes indicators using the ta library, then converts to Polars."""
         import ta
 
         params = TECH_PARAMS[resolution.value]
@@ -186,7 +186,7 @@ class TechnicalFetcher(BaseFetcher):
         else:
             result["obv_slope"] = np.nan
 
-        # ── ATR (정규화: ATR / Close) ────────────────────────────────────────
+        # ── ATR (normalized: ATR / Close) ────────────────────────────────────
         if n >= params.atr_length + 1:
             atr = ta.volatility.AverageTrueRange(
                 high, low, close, window=params.atr_length
@@ -206,10 +206,10 @@ class TechnicalFetcher(BaseFetcher):
         return pl.from_pandas(result).sort("date")
 
 
-# ── 캐시 직렬화 헬퍼 ──────────────────────────────────────────────────────────
+# ── Cache serialization helpers ───────────────────────────────────────────────
 
 def _merge_resolution_cache(data: dict[str, pl.DataFrame]) -> pl.DataFrame:
-    """3개 해상도 DataFrame을 하나의 DataFrame으로 병합 (resolution 컬럼 추가)."""
+    """Merges 3-resolution DataFrames into a single DataFrame (adds a resolution column)."""
     frames = []
     for res, df in data.items():
         frames.append(df.with_columns(pl.lit(res).alias("_resolution")))
@@ -217,7 +217,7 @@ def _merge_resolution_cache(data: dict[str, pl.DataFrame]) -> pl.DataFrame:
 
 
 def _split_resolution_cache(df: pl.DataFrame) -> dict[str, pl.DataFrame]:
-    """병합된 캐시 DataFrame을 해상도별로 분리."""
+    """Splits the merged cache DataFrame by resolution."""
     if "_resolution" not in df.columns:
         return {"daily": df}
     result = {}

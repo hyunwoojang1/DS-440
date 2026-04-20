@@ -1,4 +1,4 @@
-"""데이터 fetcher 기본 인터페이스 및 DataResolution 열거형."""
+"""Data fetcher base interface and DataResolution enum."""
 
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -7,10 +7,10 @@ import polars as pl
 
 
 class DataResolution(str, Enum):
-    """데이터 해상도 (시계열별 봉 단위)."""
-    DAILY   = "daily"    # Short-term: 일봉
-    WEEKLY  = "weekly"   # Mid-term:   주봉
-    MONTHLY = "monthly"  # Long-term:  월봉
+    """Data resolution (bar unit per time horizon)."""
+    DAILY   = "daily"    # Short-term: daily bars
+    WEEKLY  = "weekly"   # Mid-term:   weekly bars
+    MONTHLY = "monthly"  # Long-term:  monthly bars
 
 
 class BaseFetcher(ABC):
@@ -21,10 +21,10 @@ class BaseFetcher(ABC):
         start_date: str,
         end_date: str,
     ) -> pl.DataFrame:
-        """'date' 컬럼 + 지표별 컬럼을 가진 Polars DataFrame 반환."""
+        """Returns a Polars DataFrame with a 'date' column + per-indicator columns."""
         ...
 
     @abstractmethod
     def validate_connection(self) -> bool:
-        """데이터 소스 연결 가능 여부 확인."""
+        """Check whether the data source is reachable."""
         ...

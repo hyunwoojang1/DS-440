@@ -1,4 +1,4 @@
-"""Z-Score 정규화: z ∈ [-3, 3] → [0, 100]."""
+"""Z-Score normalization: z ∈ [-3, 3] → [0, 100]."""
 
 from __future__ import annotations
 import numpy as np
@@ -15,7 +15,7 @@ class ZScoreNormalizer(BaseNormalizer):
     def fit(self, historical) -> "ZScoreNormalizer":
         arr = _to_numpy(historical)
         if len(arr) == 0:
-            raise ValueError("fit()에 전달된 데이터가 비어 있습니다.")
+            raise ValueError("Data passed to fit() is empty.")
         self._mean = float(arr.mean())
         self._std  = float(arr.std())
         if self._std < 1e-9:

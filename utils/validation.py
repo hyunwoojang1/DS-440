@@ -1,4 +1,4 @@
-"""Pydantic 기반 런타임 데이터 검증."""
+"""Pydantic-based runtime data validation."""
 
 from pydantic import BaseModel, field_validator
 
@@ -12,7 +12,7 @@ class IndicatorScore(BaseModel):
     @classmethod
     def check_range(cls, v):
         if v is not None and not (0.0 <= v <= 100.0):
-            raise ValueError(f"점수는 0-100 범위여야 합니다: {v}")
+            raise ValueError(f"Score must be in the 0-100 range: {v}")
         return v
 
 

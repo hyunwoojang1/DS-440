@@ -1,4 +1,4 @@
-"""BaseHorizon 인터페이스 및 HorizonResult 데이터클래스."""
+"""BaseHorizon interface and HorizonResult dataclass."""
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field

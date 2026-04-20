@@ -1,4 +1,4 @@
-"""CSV 리포트 포맷터."""
+"""CSV report formatter."""
 
 from pathlib import Path
 

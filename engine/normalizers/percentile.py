@@ -1,4 +1,4 @@
-"""Percentile Rank 정규화: 히스토리 내 상대 순위 → [0, 100]."""
+"""Percentile Rank normalization: relative rank within history → [0, 100]."""
 
 from __future__ import annotations
 import numpy as np
@@ -13,7 +13,7 @@ class PercentileRankNormalizer(BaseNormalizer):
     def fit(self, historical) -> "PercentileRankNormalizer":
         arr = _to_numpy(historical)
         if len(arr) == 0:
-            raise ValueError("fit()에 전달된 데이터가 비어 있습니다.")
+            raise ValueError("Data passed to fit() is empty.")
         self._sorted = np.sort(arr)
         self._fitted = True
         return self

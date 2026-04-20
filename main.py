@@ -1,4 +1,4 @@
-"""MHIDSS CLI 진입점."""
+"""MHIDSS CLI entry point."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from engine.entry_score import EntryScoreEngine
 from engine.horizons.base import HorizonResult
 from reports.report_builder import ReportBuilder
 
-# Windows 터미널 UTF-8 강제 설정
+# Force UTF-8 encoding for Windows terminal
 if sys.platform == "win32":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
@@ -37,21 +37,21 @@ SIGNAL_COLORS = {
 
 
 def _resolve_ticker(query: str) -> tuple[str, str]:
-    """회사명 또는 티커 → (ticker, company_name) 반환.
+    """Company name or ticker → returns (ticker, company_name).
 
-    - 이미 티커처럼 보이면 (≤6자, 영문자만) 그대로 반환
-    - 아니면 yfinance Search로 검색 후 첫 번째 주식(EQUITY) 결과 반환
-    - 실패 시 원본 문자열을 대문자로 반환
+    - If it already looks like a ticker (≤6 chars, letters only) return as-is
+    - Otherwise search via yfinance Search and return the first EQUITY result
+    - Return the original string uppercased on failure
     """
     import yfinance as yf
 
-    # 사용자가 이미 대문자로 입력했으면 티커로 간주 (AAPL, MSFT, SPY 등)
+    # If the user already typed uppercase, treat as ticker (AAPL, MSFT, SPY, etc.)
     stripped = query.strip()
     cleaned = stripped.upper()
     if stripped == cleaned and cleaned.isalpha() and len(cleaned) <= 6:
         return cleaned, cleaned
 
-    # 회사명으로 검색
+    # Search by company name
     try:
         results = yf.Search(query, max_results=5).quotes
         for r in results:
@@ -67,29 +67,29 @@ def _resolve_ticker(query: str) -> tuple[str, str]:
 
 @app.command()
 def run(
-    queries: list[str] = typer.Argument(..., help="티커 또는 회사명 (예: AAPL '애플' 'Microsoft' NVDA)"),
-    as_of: Optional[str] = typer.Option(None, "--date", "-d", help="분석 기준일 (YYYY-MM-DD, 기본: 오늘)"),
-    horizon: Optional[str] = typer.Option(None, "--horizon", "-h", help="특정 시계열만 출력 (short|mid|long)"),
-    output_format: str = typer.Option("html", "--format", "-f", help="출력 형식 (json,csv,html)"),
+    queries: list[str] = typer.Argument(..., help="Ticker or company name (e.g., AAPL 'Apple' 'Microsoft' NVDA)"),
+    as_of: Optional[str] = typer.Option(None, "--date", "-d", help="Analysis reference date (YYYY-MM-DD, default: today)"),
+    horizon: Optional[str] = typer.Option(None, "--horizon", "-h", help="Output only the specified horizon (short|mid|long)"),
+    output_format: str = typer.Option("html", "--format", "-f", help="Output format (json,csv,html)"),
     output_dir: Path = typer.Option(Path("./output"), "--output-dir", "-o"),
-    no_browser: bool = typer.Option(False, "--no-browser", help="브라우저 자동 오픈 비활성화"),
+    no_browser: bool = typer.Option(False, "--no-browser", help="Disable automatic browser launch"),
 ) -> None:
-    """티커 또는 회사명으로 Short/Mid/Long 시계열 대쉬보드를 생성하고 브라우저로 엽니다."""
+    """Generates Short/Mid/Long horizon dashboards for the given ticker or company name and opens them in the browser."""
     as_of_date = as_of or date.today().isoformat()
     formats = [f.strip() for f in output_format.split(",")]
     builder = ReportBuilder(output_dir=output_dir)
     engine = EntryScoreEngine()
 
     for query in queries:
-        with console.status(f"[{query}] 티커 검색 중..."):
+        with console.status(f"[{query}] Searching ticker..."):
             ticker, company = _resolve_ticker(query)
 
         if ticker != query.strip().upper():
             console.print(f"  [dim]{query}[/dim] → [cyan]{ticker}[/cyan] ({company})")
 
-        console.print(f"\n[bold]MHIDSS[/bold] | 티커: [cyan]{ticker}[/cyan] | 기준일: [cyan]{as_of_date}[/cyan]")
+        console.print(f"\n[bold]MHIDSS[/bold] | Ticker: [cyan]{ticker}[/cyan] | Reference date: [cyan]{as_of_date}[/cyan]")
 
-        with console.status(f"[{ticker}] 데이터 수집 및 스코어 계산 중..."):
+        with console.status(f"[{ticker}] Fetching data and computing scores..."):
             results = engine.run(ticker=ticker, as_of_date=as_of_date)
 
         if horizon:
@@ -197,8 +197,8 @@ def _print_legend() -> None:
     weight_table.add_column("Fundamental", justify="center")
     weight_table.add_column("Technical", justify="center")
     weight_table.add_row("Short (1-4W)", "Daily",   "20%", "10%", "[bold]70%[/bold]")
-    weight_table.add_row("Mid   (1-6M)", "Weekly",  "35%", "30%", "[bold]35%[/bold]")
-    weight_table.add_row("Long (6-24M)", "Monthly", "[bold]50%[/bold]", "[bold]45%[/bold]", "5%")
+    weight_table.add_row("Mid   (1-6M)", "Weekly",  "30%", "30%", "[bold]40%[/bold]")
+    weight_table.add_row("Long (6-24M)", "Monthly", "[bold]40%[/bold]", "[bold]35%[/bold]", "25%")
 
     console.print()
     console.print(Panel(

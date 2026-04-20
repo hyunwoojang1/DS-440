@@ -1,11 +1,11 @@
-"""FRED API 실제 연결 테스트 (FRED_API_KEY 환경변수 필요)."""
+"""FRED API live connection test (requires FRED_API_KEY env var)."""
 
 import os
 import pytest
 
 pytestmark = pytest.mark.skipif(
     not os.environ.get("FRED_API_KEY"),
-    reason="FRED_API_KEY 환경변수 미설정 — 실제 연결 테스트 건너뜀",
+    reason="FRED_API_KEY env var not set — skipping live connection tests",
 )
 
 

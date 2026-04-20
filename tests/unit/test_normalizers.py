@@ -1,4 +1,4 @@
-"""정규화기 단위 테스트."""
+"""Normalizer unit tests."""
 
 import numpy as np
 import pandas as pd

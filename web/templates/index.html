@@ -779,7 +779,9 @@ function switchTab(tab) {
 document.addEventListener('DOMContentLoaded', () => {
   const today = todayISO();
   document.getElementById('analyze-date').value = today;
+  document.getElementById('analyze-date').max = today;
   document.getElementById('compare-date').value = today;
+  document.getElementById('compare-date').max = today;
   document.getElementById('analyze-ticker').focus();
 });
 
@@ -1050,6 +1052,14 @@ async function runAnalyze() {
   const ticker = document.getElementById('analyze-ticker').value.trim();
   const dateVal = document.getElementById('analyze-date').value;
   if (!ticker) { alert('Please enter a ticker or company name.'); return; }
+  if (!/^[A-Za-z0-9]{1,10}$/.test(ticker)) {
+    alert('Invalid ticker: letters and numbers only, max 10 characters.\nExample: AAPL, MSFT, SPY');
+    return;
+  }
+  if (dateVal && dateVal > todayISO()) {
+    alert('Date cannot be in the future. Please select today or an earlier date.');
+    return;
+  }
 
   setAnalyzeState('loading', `Fetching data for "${ticker}"…`);
   document.getElementById('analyze-btn').disabled = true;
@@ -1085,6 +1095,16 @@ async function runCompare() {
   const tickerB = document.getElementById('compare-ticker-b').value.trim();
   const dateVal = document.getElementById('compare-date').value;
   if (!tickerA || !tickerB) { alert('Please enter both tickers.'); return; }
+  for (const t of [tickerA, tickerB]) {
+    if (!/^[A-Za-z0-9]{1,10}$/.test(t)) {
+      alert(`Invalid ticker "${t}": letters and numbers only, max 10 characters.\nExample: AAPL, MSFT`);
+      return;
+    }
+  }
+  if (dateVal && dateVal > todayISO()) {
+    alert('Date cannot be in the future. Please select today or an earlier date.');
+    return;
+  }
 
   setCompareState('loading', `Comparing ${tickerA} vs ${tickerB}…`);
   document.getElementById('compare-btn').disabled = true;
