@@ -1,0 +1,29 @@
+# DS-440 Core Dependencies
+fredapi>=0.5.1
+wrds>=3.1.6
+pandas>=2.0
+numpy>=1.26
+ta
+yfinance>=0.2.40
+pydantic>=2.5
+structlog>=24.1
+polars>=0.20
+pyarrow>=14.0
+typer>=0.12
+rich>=13.7
+jinja2>=3.1
+python-dotenv>=1.0
+tenacity>=8.2
+flask>=3.0
+flask-limiter
+matplotlib
+openpyxl
+
+# Dev / Testing (optional)
+pytest>=8.0
+pytest-cov>=5.0
+pytest-mock>=3.12
+responses>=0.25
+ruff>=0.4
+mypy>=1.10
+pre-commit>=3.7
